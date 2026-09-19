@@ -87,3 +87,13 @@ test('chapter and psalm numbers are pronounced in Sino-Korean (e.g. 11장 -> 십
  assert.equal(speechText('시편 11편'),'시편 십일편');
 });
 
+test('paragraphFilename formats index and first 3 words (e.g. 023_본질적으로_성경을_연구.mp3)',async()=>{
+ const {paragraphFilename}=await import('../lib/lecture-engine.mjs');
+ assert.equal(paragraphFilename(23, '본질적으로 성경을 연구하는 데 있어서'), '023_본질적으로_성경을_연구하는.mp3');
+ assert.equal(paragraphFilename(23, '본질적으로 성경을 연구'), '023_본질적으로_성경을_연구.mp3');
+ assert.equal(paragraphFilename(1, '1. 본질적으로 성경을 연구'), '001_본질적으로_성경을_연구.mp3');
+ assert.equal(paragraphFilename(5, '“하나님의 행위(Acts of God)”를 살핍니다.'), '005_하나님의_행위_Acts.mp3');
+ assert.equal(paragraphFilename(10, ''), '010.mp3');
+});
+
+

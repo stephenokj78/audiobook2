@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {startPlayback,cancelPlayback} from '@/lib/playback.mjs';
 import {readSaved,writeSaved,audioKey} from '@/lib/audio-cache';
 import { readPdf, type PageText } from '@/lib/pdf-reader';
-import { splitLectures, speechText, repairLectureManuscripts, normalizeTts, reflowTtsParagraphs, splitBilingual, splitParagraphs, paragraphAudio, safeName, paragraphFilename, makeSsml } from '@/lib/lecture-engine.mjs';
+import { splitLectures, speechText, repairLectureManuscripts, normalizeTts, reflowTtsParagraphs, splitBilingual, splitParagraphs, paragraphAudio, safeName, paragraphFilename, lectureFolderName, makeSsml } from '@/lib/lecture-engine.mjs';
 type Lecture={id:string;title:string;startPage:number;endPage:number;raw:string;text:string};
 const koVoices=[['ko-KR-SunHiNeural','선희 · 여성'],['ko-KR-InJoonNeural','인준 · 남성']];
 const enVoices=[['en-US-EmmaMultilingualNeural','Emma · 영어 여성'],['en-US-AndrewMultilingualNeural','Andrew · 영어 남성']];
@@ -71,7 +71,7 @@ export default function Home(){
    if(Array.from({length:selected.length},(_,i)=>blobs[i]).some(b=>!b)){setStatus('낭독을 마쳤습니다. 전체 파일은 이 강의 MP3 만들기로 저장하세요.');return;}
    const blob=new Blob(blobs,{type:'audio/mpeg'}),name=safeName(current.title)+(sample?'_미리듣기':'')+'.mp3',url=URL.createObjectURL(blob);
    setAudio({url,name});
-   if(!sample){const doc=await docBlob(current);const {zipSync}=await import('fflate');const files:Record<string,Uint8Array>={[name]:new Uint8Array(await blob.arrayBuffer()),[safeName(current.title)+'.docx']:new Uint8Array(await doc.arrayBuffer())};for(let i=0;i<blobs.length;i++)files[`단락별/${paragraphFilename(i+1,selected[i]?.text)}`]=new Uint8Array(await blobs[i].arrayBuffer());const bundle=new Blob([zipSync(files) as Uint8Array<ArrayBuffer>],{type:'application/zip'});const track={index:active,url,name,docUrl:URL.createObjectURL(doc),bundleUrl:URL.createObjectURL(bundle)};setTracks(ts=>[...ts.filter(t=>t.index!==active),track]);}
+   if(!sample){const doc=await docBlob(current);const {zipSync}=await import('fflate');const folder=lectureFolderName(current.title);const files:Record<string,Uint8Array>={[name]:new Uint8Array(await blob.arrayBuffer()),[safeName(current.title)+'.docx']:new Uint8Array(await doc.arrayBuffer())};for(let i=0;i<blobs.length;i++)files[`${folder}/${paragraphFilename(i+1,selected[i]?.text)}`]=new Uint8Array(await blobs[i].arrayBuffer());const bundle=new Blob([zipSync(files) as Uint8Array<ArrayBuffer>],{type:'application/zip'});const track={index:active,url,name,docUrl:URL.createObjectURL(doc),bundleUrl:URL.createObjectURL(bundle)};setTracks(ts=>[...ts.filter(t=>t.index!==active),track]);}
    setStatus('전체 변환을 마쳤습니다. 아래에서 음성을 재생하거나 DOCX와 MP3를 함께 내려받으세요.');
   }catch(e){if(controller.signal.aborted)setStatus('낭독과 음성 생성을 중지했습니다.');else message(e);}
   finally{controller.abort();if(playingUrl)URL.revokeObjectURL(playingUrl);audioAbort.current=null;setBusy('');}

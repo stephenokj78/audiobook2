@@ -96,4 +96,13 @@ test('paragraphFilename formats index and first 3 words (e.g. 023_본질적으�
  assert.equal(paragraphFilename(10, ''), '010.mp3');
 });
 
+test('lectureFolderName formats folder as title_단락별 (e.g. 제1장성경해석학서론_단락별)',async()=>{
+ const {lectureFolderName}=await import('../lib/lecture-engine.mjs');
+ assert.equal(lectureFolderName('제1강 성경해석학 서론(Introduction to Biblical Hermeneutics)'), '제1장성경해석학서론_단락별');
+ assert.equal(lectureFolderName('제1강 성경해석학 서론'), '제1장성경해석학서론_단락별');
+ assert.equal(lectureFolderName('제2강 해석을 위한 준비'), '제2장해석을위한준비_단락별');
+ assert.equal(lectureFolderName('표지·발행 정보'), '표지·발행정보_단락별');
+});
+
+
 

@@ -1,0 +1,2 @@
+import fs from 'node:fs/promises';import {createWorker} from 'tesseract.js';
+for(const langs of [['kor'],['kor','eng']]){const w=await createWorker(langs,1,{langPath:'public/ocr/lang',cacheMethod:'none'});const {data}=await w.recognize('work/scan-test/page-20-0.png');console.log(langs,data.confidence,data.text.slice(0,300));await fs.writeFile('work/scan-test/kor-'+langs.length+'.txt',data.text);await w.terminate();}

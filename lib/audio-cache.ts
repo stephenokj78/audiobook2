@@ -1,0 +1,5 @@
+let database:Promise<IDBDatabase>|undefined;
+function db(){return database??=new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('audiobook2-resume',1);r.onupgradeneeded=()=>r.result.createObjectStore('saved');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+export async function readSaved<T>(key:string):Promise<T|undefined>{const d=await db();return new Promise((resolve,reject)=>{const r=d.transaction('saved').objectStore('saved').get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+export async function writeSaved(key:string,value:unknown){const d=await db();return new Promise<void>((resolve,reject)=>{const t=d.transaction('saved','readwrite');t.objectStore('saved').put(value,key);t.oncomplete=()=>resolve();t.onerror=()=>reject(t.error);t.onabort=()=>reject(t.error);});}
+export async function audioKey(text:string,voice:string){const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([voice,text])));return 'audio:'+Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');}

@@ -104,5 +104,62 @@ test('lectureFolderName formats folder as title_단락별 (e.g. 제1장성경해
  assert.equal(lectureFolderName('표지·발행 정보'), '표지·발행정보_단락별');
 });
 
+test('Bible abbreviations expand to full Korean book names with Sino-Korean chapter/verse',async()=>{
+ const {speechText}=await import('../lib/lecture-engine.mjs');
+ assert.equal(speechText('고후 5:18-19'),'고린도후서 오장 십팔절부터 십구절');
+ assert.equal(speechText('롬 8:29'),'로마서 팔장 이십구절');
+ assert.equal(speechText('창 1:1-2'),'창세기 일장 일절부터 이절');
+ assert.equal(speechText('시 23:1-3'),'시편 이십삼편 일절부터 삼절');
+ assert.equal(speechText('출 3:14'),'출애굽기 삼장 십사절');
+ assert.equal(speechText('요일 5:6-7'),'요한일서 오장 육절부터 칠절');
+ assert.equal(speechText('(고후 5:18-19)'),'(고린도후서 오장 십팔절부터 십구절)');
+});
 
+test('Hanja and footnote marks are removed from speechText',async()=>{
+ const {speechText}=await import('../lib/lecture-engine.mjs');
+ const sample = `성령께서는 마치 인(印)을 치듯이 증거를 마음에 새기신다.
+신학자들3)에게서 비롯된 것인데, 끝없는 미로(迷路)를 헤매게 될 것이다.
+그것이 다. 2)
+1. 참조. 1권 13장 14-15절.
+2. 그리스도와 성령`;
+ const result = speechText(sample);
+ assert.ok(!result.includes('印'));
+ assert.ok(!result.includes('迷路'));
+ assert.ok(!result.includes('3)'));
+ assert.ok(!result.includes('2)'));
+ assert.ok(!result.includes('참조.'));
+ assert.ok(result.includes('인을 치듯이'));
+ assert.ok(result.includes('신학자들에게서'));
+ assert.ok(result.includes('미로를'));
+ assert.ok(result.includes('이. 그리스도와 성령'));
+});
 
+test('All numbers are pronounced as Sino-Korean (일, 이, 삼...)',async()=>{
+ const {speechText}=await import('../lib/lecture-engine.mjs');
+ assert.equal(speechText('3가지 이유가 있다.'),'삼가지 이유가 있다.');
+ assert.equal(speechText('100명의 사람'),'백명의 사람');
+ assert.equal(speechText('1536년 출간'),'천오백삼십육년 출간');
+ assert.equal(speechText('1. 성령의 역사'),'일. 성령의 역사');
+});
+
+test('Parenthesis options control reading mode',async()=>{
+ const {speechText}=await import('../lib/lecture-engine.mjs');
+ const text = '선이해(presuppositions)와 (고후 5:18-19) 구절 및 (보충 설명)입니다.';
+ assert.equal(speechText(text, 'omit_english_hanja'), '선이해와 (고린도후서 오장 십팔절부터 십구절) 구절 및 (보충 설명)입니다.');
+ assert.equal(speechText(text, 'omit_all'), '선이해와 구절 및 입니다.');
+ assert.equal(speechText(text, 'bible_only'), '선이해와 (고린도후서 오장 십팔절부터 십구절) 구절 및 입니다.');
+ assert.equal(speechText(text, 'read_all'), '선이해(presuppositions)와 (고린도후서 오장 십팔절부터 십구절) 구절 및 (보충 설명)입니다.');
+});
+
+test('standalone chapter headings on their own line pick up title from next line',async()=>{
+ const {splitLectures}=await import('../lib/lecture-engine.mjs');
+ const pages = [
+   { text: '서문입니다.' },
+   { text: '제1장\n그리스도의 은혜는 성령의 역사로 베풀어짐\n1. 본문 내용입니다.' },
+   { text: '제2장\n믿음의 정의와 특성\n본문 내용입니다.' }
+ ];
+ const r = splitLectures(pages);
+ assert.equal(r.detected.length, 2);
+ assert.equal(r.detected[0].title, '제1장 그리스도의 은혜는 성령의 역사로 베풀어짐');
+ assert.equal(r.detected[1].title, '제2장 믿음의 정의와 특성');
+});
